@@ -41,10 +41,12 @@ if [[ ! -z "${CONFIG_IMAGE_KEY}" ]]; then
     IMAGE_KEY=$CONFIG_IMAGE_KEY
 fi
 
+DOCKER_PLATFORM="$(uname -m)"
+
 ISAAC_ROS_DEV_DIR="${ISAAC_ROS_WS}"
 SKIP_IMAGE_BUILD=0
 VERBOSE=0
-VALID_ARGS=$(getopt -o hvd:i:ba: --long help,verbose,isaac_ros_dev_dir:,image_key_suffix:,skip_image_build,docker_arg: -- "$@")
+VALID_ARGS=$(getopt -o hvp:d:i:ba: --long help,platform:,verbose,isaac_ros_dev_dir:,image_key_suffix:,skip_image_build,docker_arg: -- "$@")
 eval set -- "$VALID_ARGS"
 while [ : ]; do
   case "$1" in
@@ -67,6 +69,10 @@ while [ : ]; do
     -v | --verbose)
         VERBOSE=1
         shift
+        ;;
+    -p | --platform)
+        DOCKER_PLATFORM="$2"
+        shift 2
         ;;
     -h | --help)
         usage
@@ -160,9 +166,9 @@ fi
 
 # Determine base image key
 PLATFORM="$(uname -m)"
-BASE_IMAGE_KEY=$PLATFORM.user
+BASE_IMAGE_KEY=$DOCKER_PLATFORM.user
 if [[ ! -z "${IMAGE_KEY}" ]]; then
-    BASE_IMAGE_KEY=$PLATFORM.$IMAGE_KEY
+    BASE_IMAGE_KEY=$DOCKER_PLATFORM.$IMAGE_KEY
 
     # If the configured key does not have .user, append it last
     if [[ $IMAGE_KEY != *".user"* ]]; then
@@ -180,7 +186,7 @@ if [[ ! -z $CONFIG_SKIP_IMAGE_BUILD ]]; then
     SKIP_IMAGE_BUILD=1
 fi
 
-BASE_NAME="isaac_ros_dev-$PLATFORM"
+BASE_NAME="isaac_ros_dev-$DOCKER_PLATFORM"
 if [[ ! -z "$CONFIG_CONTAINER_NAME_SUFFIX" ]] ; then
     BASE_NAME="$BASE_NAME-$CONFIG_CONTAINER_NAME_SUFFIX"
 fi
@@ -204,7 +210,7 @@ print_info "Launching Isaac ROS Dev container with image key ${BASE_IMAGE_KEY}: 
 # Build imag to launch
 if [[ $SKIP_IMAGE_BUILD -ne 1 ]]; then
     print_info "Building $BASE_IMAGE_KEY base as image: $BASE_NAME"
-   $ROOT/build_image_layers.sh --image_key "$BASE_IMAGE_KEY" --image_name "$BASE_NAME"
+    $ROOT/build_image_layers.sh --image_key "$BASE_IMAGE_KEY" --image_name "$BASE_NAME" --platform "$DOCKER_PLATFORM"
 
     # Check result
     if [ $? -ne 0 ]; then
@@ -281,6 +287,7 @@ docker run -it --rm \
     --network host \
     ${DOCKER_ARGS[@]} \
     -v $ISAAC_ROS_DEV_DIR:/workspaces/isaac_ros-dev \
+    -v /run/udev:/run/udev:ro \
     -v /etc/localtime:/etc/localtime:ro \
     --name "$CONTAINER_NAME" \
     --runtime nvidia \

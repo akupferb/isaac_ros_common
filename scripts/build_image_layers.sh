@@ -27,6 +27,8 @@ DOCKER_SEARCH_DIRS=(${DOCKER_DIR})
 SKIP_REGISTRY_CHECK=0
 BASE_DOCKER_REGISTRY_NAMES=("nvcr.io/isaac/ros")
 
+DOCKER_PLATFORM="$(uname -m)"
+
 # Read and parse config file if exists
 #
 # CONFIG_DOCKER_SEARCH_DIRS (array, can be empty)
@@ -55,7 +57,7 @@ if [ ${#CONFIG_DOCKER_SEARCH_DIRS[@]} -gt 0 ]; then
 fi
 
 # Parse command-line args
-VALID_ARGS=$(getopt -o hra:b:c:ki:n:d: --long help,skip_registry_check,build_arg:,base_image:,context_dir:,disable_buildkit,image_key:,image_name:,ignore_composite_keys,docker_arg: -- "$@")
+VALID_ARGS=$(getopt -o hra:b:c:ki:n:p:d: --long help,platform:,skip_registry_check,build_arg:,base_image:,context_dir:,disable_buildkit,image_key:,image_name:,ignore_composite_keys,docker_arg: -- "$@")
 eval set -- "$VALID_ARGS"
 while [ : ]; do
   case "$1" in
@@ -85,6 +87,10 @@ while [ : ]; do
         ;;
     -n | --image_name)
         TARGET_IMAGE_NAME="$2"
+        shift 2
+        ;;
+    -p | --platform)
+        DOCKER_PLATFORM="$2"
         shift 2
         ;;
     -r | --skip_registry_check)
@@ -278,7 +284,7 @@ fi
 BUILD_ARGS+=("--build-arg" "USERNAME="admin"")
 BUILD_ARGS+=("--build-arg" "USER_UID=`id -u`")
 BUILD_ARGS+=("--build-arg" "USER_GID=`id -g`")
-BUILD_ARGS+=("--build-arg" "PLATFORM=$PLATFORM")
+BUILD_ARGS+=("--build-arg" "PLATFORM=$DOCKER_PLATFORM")
 
 for BUILD_ARG in ${ADDITIONAL_BUILD_ARGS[@]}
 do

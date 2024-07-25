@@ -13,8 +13,8 @@ ROOT="$( cd "$( dirname "${BASH_SOURCE[0]}" )" >/dev/null 2>&1 && pwd )"
 source $ROOT/utils/print_color.sh
 
 BUILDKIT_DISABLED_STR=""
-if [[ ! -z "$5" ]]; then
+if [[ ! -z "$6" ]]; then
     BUILDKIT_DISABLED_STR="--disable_buildkit"
 fi
 
-$ROOT/build_image_layers.sh --image_key "$1" --image_name "$2" --base_image "$3" --context_dir "$4" $BUILDKIT_DISABLED_STR
+$ROOT/build_image_layers.sh --image_key "$1" --image_name "$2" --base_image "$3" --context_dir "$4" --platform "$5" $BUILDKIT_DISABLED_STR

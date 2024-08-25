@@ -46,8 +46,9 @@ SKIP_REGISTRY_CHECK=""
 
 ISAAC_ROS_DEV_DIR="${ISAAC_ROS_WS}"
 SKIP_IMAGE_BUILD=0
+SKIP_IMAGE_RUN=0
 VERBOSE=0
-VALID_ARGS=$(getopt -o hvp:d:i:bsa: --long help,platform:,verbose,isaac_ros_dev_dir:,image_key_suffix:,skip_image_build,skip_registry_check,docker_arg: -- "$@")
+VALID_ARGS=$(getopt -o hvp:d:i:bsa: --long help,platform:,verbose,isaac_ros_dev_dir:,image_key_suffix:,skip_image_build,skip_image_run,skip_registry_check,docker_arg: -- "$@")
 eval set -- "$VALID_ARGS"
 while [ : ]; do
   case "$1" in
@@ -61,6 +62,10 @@ while [ : ]; do
         ;;
     -b | --skip_image_build)
         SKIP_IMAGE_BUILD=1
+        shift
+        ;;
+    --skip_image_run)
+        SKIP_IMAGE_RUN=1
         shift
         ;;
     -a | --docker_arg)
@@ -232,6 +237,12 @@ fi
 if [[ -z $(docker image ls --quiet $BASE_NAME) ]]; then
     print_error "No built image found for $BASE_NAME, aborting."
     exit 1
+fi
+
+# Skip running the image if param is set
+if [[ $SKIP_IMAGE_RUN -eq 1 ]]; then
+    print_info "Successfully built image: $BASE_NAME, exiting..."
+    exit 0
 fi
 
 # Map host's display socket to docker

@@ -20,6 +20,7 @@ function usage() {
 
 # Initialize arguments
 DOCKER_BUILDKIT=1
+BUILDKIT_PROGRESS="auto"
 IGNORE_COMPOSITE_KEYS=0
 ADDITIONAL_BUILD_ARGS=()
 ADDITIONAL_DOCKER_ARGS=()
@@ -57,7 +58,7 @@ if [ ${#CONFIG_DOCKER_SEARCH_DIRS[@]} -gt 0 ]; then
 fi
 
 # Parse command-line args
-VALID_ARGS=$(getopt -o hra:b:c:ki:n:p:d: --long help,platform:,skip_registry_check,build_arg:,base_image:,context_dir:,disable_buildkit,image_key:,image_name:,ignore_composite_keys,docker_arg: -- "$@")
+VALID_ARGS=$(getopt -o hra:b:c:ki:n:p:d: --long help,platform:,skip_registry_check,build_arg:,base_image:,context_dir:,disable_buildkit,show_progress,image_key:,image_name:,ignore_composite_keys,docker_arg: -- "$@")
 eval set -- "$VALID_ARGS"
 while [ : ]; do
   case "$1" in
@@ -79,6 +80,10 @@ while [ : ]; do
         ;;
     -k | --disable_buildkit)
         DOCKER_BUILDKIT=0
+        shift
+        ;;
+    --show_progress)
+        BUILDKIT_PROGRESS="plain"
         shift
         ;;
     -i | --image_key)
@@ -347,7 +352,7 @@ for (( i=${#DOCKERFILES[@]}-1 ; i>=0 ; i-- )); do
 
     print_warning "Building ${DOCKERFILE} as image: ${IMAGE_NAME} with base: ${BASE_IMAGE_NAME}"
 
-    DOCKER_BUILDKIT=${DOCKER_BUILDKIT} docker build -f ${DOCKERFILE} \
+    DOCKER_BUILDKIT=${DOCKER_BUILDKIT} BUILDKIT_PROGRESS=${BUILDKIT_PROGRESS} docker build -f ${DOCKERFILE} \
      --network host \
      -t ${IMAGE_NAME} \
      ${BASE_IMAGE_ARG} \

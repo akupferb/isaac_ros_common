@@ -42,11 +42,12 @@ if [[ ! -z "${CONFIG_IMAGE_KEY}" ]]; then
 fi
 
 DOCKER_PLATFORM="$(uname -m)"
+SKIP_REGISTRY_CHECK=""
 
 ISAAC_ROS_DEV_DIR="${ISAAC_ROS_WS}"
 SKIP_IMAGE_BUILD=0
 VERBOSE=0
-VALID_ARGS=$(getopt -o hvp:d:i:ba: --long help,platform:,verbose,isaac_ros_dev_dir:,image_key_suffix:,skip_image_build,docker_arg: -- "$@")
+VALID_ARGS=$(getopt -o hvp:d:i:bsa: --long help,platform:,verbose,isaac_ros_dev_dir:,image_key_suffix:,skip_image_build,skip_registry_check,docker_arg: -- "$@")
 eval set -- "$VALID_ARGS"
 while [ : ]; do
   case "$1" in
@@ -73,6 +74,10 @@ while [ : ]; do
     -p | --platform)
         DOCKER_PLATFORM="$2"
         shift 2
+        ;;
+    -s | --skip_registry_check)
+        SKIP_REGISTRY_CHECK="--skip_registry_check"
+        shift
         ;;
     -h | --help)
         usage
@@ -210,7 +215,7 @@ print_info "Launching Isaac ROS Dev container with image key ${BASE_IMAGE_KEY}: 
 # Build imag to launch
 if [[ $SKIP_IMAGE_BUILD -ne 1 ]]; then
     print_info "Building $BASE_IMAGE_KEY base as image: $BASE_NAME"
-    $ROOT/build_image_layers.sh --image_key "$BASE_IMAGE_KEY" --image_name "$BASE_NAME" --platform "$DOCKER_PLATFORM"
+    $ROOT/build_image_layers.sh --image_key "$BASE_IMAGE_KEY" --image_name "$BASE_NAME" --platform "$DOCKER_PLATFORM" "$SKIP_REGISTRY_CHECK"
 
     # Check result
     if [ $? -ne 0 ]; then
